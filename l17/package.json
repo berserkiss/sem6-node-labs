@@ -1,0 +1,13 @@
+{
+  "name": "l17",
+  "version": "1.0.0",
+  "description": "",
+  "main": "17-01.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
+  "dependencies": {
+    "redis": "^4.7.0"
+  }
+}
