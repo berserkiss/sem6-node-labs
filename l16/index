@@ -1,0 +1,402 @@
+# Подробный разбор GraphQL: типы, мутации, функции и основные концепции
+
+## Что такое GraphQL?
+
+GraphQL — это язык запросов для API и среда выполнения для выполнения этих запросов с вашими существующими данными. В отличие от REST, GraphQL позволяет клиенту точно определить, какие данные ему нужны, и получать только их.
+
+Основные характеристики:
+- **Декларативный** - клиент запрашивает только нужные данные
+- **Сильно типизированный** - схема определяет все возможные операции
+- **Единая конечная точка** - все запросы идут на один endpoint (обычно `/graphql`)
+
+## GraphQL Типы в данном коде
+
+### 1. Скалярные типы (Scalar Types)
+
+Базовые примитивные типы:
+- `GraphQLString` - строковый тип (String)
+- `GraphQLBoolean` - логический тип (true/false)
+
+Использование:
+```javascript
+{ type: GraphQLString } // Поле строкового типа
+{ type: GraphQLBoolean } // Поле булевого типа
+```
+
+### 2. Объектные типы (Object Types)
+
+Описывают структуру возвращаемых объектов:
+
+```javascript
+const FacultyType = new GraphQLObjectType({
+    name: 'Faculty', // Имя типа в схеме
+    fields: () => ({ // Поля типа (функция для избежания циклических зависимостей)
+        faculty: { type: GraphQLString },
+        faculty_name: { type: GraphQLString },
+    }),
+});
+```
+
+### 3. Входные типы (Input Types)
+
+Для аргументов мутаций (аналог DTO):
+
+```javascript
+const FacultyInput = new GraphQLInputObjectType({
+    name: 'FacultyInput',
+    fields: {
+        faculty: { type: GraphQLString },
+        faculty_name: { type: GraphQLString },
+    },
+});
+```
+
+### 4. Типы списков (List Types)
+
+Для возврата массивов данных:
+
+```javascript
+new GraphQLList(FacultyType) // Означает массив: [Faculty]
+```
+
+## Мутации (Mutations) в GraphQL
+
+Мутации — это операции, которые изменяют данные (аналог POST/PUT/PATCH/DELETE в REST).
+
+### Структура мутации
+
+Каждая мутация включает:
+1. **Возвращаемый тип** - что вернёт мутация
+2. **Аргументы** - входные данные (обычно Input-типы)
+3. **Resolver-функцию** - логика выполнения
+
+Пример:
+```javascript
+setFaculty: {
+    type: FacultyType, // Возвращает FacultyType
+    args: {
+        faculty: { type: FacultyInput } // Принимает FacultyInput
+    },
+    async resolve(_, { faculty }) {
+        // Логика изменения данных
+        return faculty;
+    },
+}
+```
+
+### Типы мутаций в коде
+
+1. **UPSERT-операции** (добавление или обновление):
+   - `setFaculty`, `setPulpit`, `setTeacher`, `setSubject`
+   - Используют SQL MERGE
+   - Возвращают изменённые данные
+
+2. **DELETE-операции**:
+   - `delFaculty`, `delPulpit`, `delTeacher`, `delSubject`
+   - Возвращают boolean (успех/неудача)
+   - Используют SQL DELETE
+
+## GraphQL Функции и методы
+
+### 1. Основные GraphQL функции
+
+1. **GraphQLSchema** - создаёт схему API:
+   ```javascript
+   new GraphQLSchema({
+       query: RootQuery,
+       mutation: Mutation,
+   });
+   ```
+
+2. **GraphQLObjectType** - создаёт объектный тип:
+   ```javascript
+   new GraphQLObjectType({ name, fields })
+   ```
+
+3. **GraphQLInputObjectType** - создаёт входной тип:
+   ```javascript
+   new GraphQLInputObjectType({ name, fields })
+   ```
+
+4. **GraphQLList** - оборачивает тип в список:
+   ```javascript
+   new GraphQLList(FacultyType) // [FacultyType]
+   ```
+
+### 2. Resolver-функции
+
+Функции, которые выполняются для получения данных. В коде они:
+
+1. Подключаются к БД:
+   ```javascript
+   const pool = await connect();
+   ```
+
+2. Выполняют SQL-запрос:
+   ```javascript
+   const result = await pool.request().query('SELECT...');
+   ```
+
+3. Возвращают данные:
+   ```javascript
+   return result.recordset; // Для запросов
+   return faculty; // Для мутаций
+   ```
+
+## Примеры GraphQL запросов и мутаций
+
+### Запрос данных:
+```graphql
+query {
+  getTeachers {
+    teacher
+    teacher_name
+    pulpit
+  }
+}
+```
+
+### Мутация (добавление):
+```graphql
+mutation {
+  setSubject(subject: {
+    subject: "MATH",
+    subject_name: "Математика",
+    pulpit: "PIT"
+  }) {
+    subject
+    subject_name
+  }
+}
+```
+
+### Мутация (удаление):
+```graphql
+mutation {
+  delTeacher(teacher: "T001")
+}
+```
+
+## Основные отличия от REST
+
+1. **Единый endpoint** - все запросы на `/graphql`
+2. **Гибкость запросов** - клиент определяет структуру ответа
+3. **Строгая типизация** - схема определяет все возможные операции
+4. **Интроспекция** - можно запросить саму схему API
+
+Давайте разберём по одному примеру каждого типа операций (запрос и мутация) с подробным объяснением кода.
+
+## 1. Пример запроса: `getTeachers`
+
+```javascript
+getTeachers: {
+    type: new GraphQLList(TeacherType),
+    args: { teacher: { type: GraphQLString } },
+    async resolve(_, { teacher }) {
+        const pool = await connect();
+        const result = await pool.request().query(
+            teacher ? `SELECT * FROM teacher WHERE teacher = '${teacher}'`
+                   : 'SELECT * FROM teacher'
+        );
+        return result.recordset;
+    },
+}
+```
+
+### Разбор:
+1. **type**: `new GraphQLList(TeacherType)`
+   - Указывает, что запрос возвращает список (массив) объектов типа `TeacherType`
+   - `TeacherType` определён ранее как объект с полями `teacher`, `teacher_name`, `pulpit`
+
+2. **args**: `{ teacher: { type: GraphQLString } }`
+   - Определяет аргументы запроса
+   - Здесь можно передать необязательный параметр `teacher` (идентификатор преподавателя)
+   - Если аргумент не передан, вернётся список всех преподавателей
+
+3. **resolve**:
+   ```javascript
+   async resolve(_, { teacher }) {
+       const pool = await connect();
+       const result = await pool.request().query(
+           teacher ? `SELECT * FROM teacher WHERE teacher = '${teacher}'`
+                  : 'SELECT * FROM teacher'
+       );
+       return result.recordset;
+   }
+   ```
+   - `_` - первый параметр (не используется, обычно содержит родительский объект)
+   - `{ teacher }` - деструктуризация аргументов
+   - Подключается к БД через пул соединений
+   - Выполняет SQL-запрос:
+     - Если передан `teacher` - выбирает конкретного преподавателя
+     - Иначе выбирает всех преподавателей
+   - Возвращает `recordset` - результат выполнения запроса
+
+### Пример GraphQL запроса:
+```graphql
+query {
+  getTeachers {
+    teacher
+    teacher_name
+    pulpit
+  }
+}
+```
+
+## 2. Пример мутации: `setTeacher`
+
+```javascript
+setTeacher: {
+    type: TeacherType,
+    args: { teacher: { type: TeacherInput } },
+    async resolve(_, { teacher }) {
+        const pool = await connect();
+        await pool.request().query(`
+            MERGE teacher AS target
+            USING (SELECT '${teacher.teacher}' AS teacher) AS source
+            ON target.teacher = source.teacher
+            WHEN MATCHED THEN UPDATE SET
+                teacher_name = N'${teacher.teacher_name}',
+                pulpit = '${teacher.pulpit}'
+            WHEN NOT MATCHED THEN INSERT
+                (teacher, teacher_name, pulpit)
+                VALUES (
+                    '${teacher.teacher}',
+                    N'${teacher.teacher_name}',
+                    '${teacher.pulpit}'
+                );
+        `);
+        return teacher;
+    },
+}
+```
+
+### Разбор:
+1. **type**: `TeacherType`
+   - Указывает, что мутация возвращает объект типа `TeacherType`
+
+2. **args**: `{ teacher: { type: TeacherInput } }`
+   - Принимает один аргумент `teacher` типа `TeacherInput`
+   - `TeacherInput` определён как:
+     ```javascript
+     {
+         teacher: { type: GraphQLString },
+         teacher_name: { type: GraphQLString },
+         pulpit: { type: GraphQLString }
+     }
+     ```
+
+3. **resolve**:
+   ```javascript
+   async resolve(_, { teacher }) {
+       const pool = await connect();
+       await pool.request().query(`
+           MERGE teacher AS target
+           USING (SELECT '${teacher.teacher}' AS teacher) AS source
+           ON target.teacher = source.teacher
+           WHEN MATCHED THEN UPDATE SET
+               teacher_name = N'${teacher.teacher_name}',
+               pulpit = '${teacher.pulpit}'
+           WHEN NOT MATCHED THEN INSERT
+               (teacher, teacher_name, pulpit)
+               VALUES (
+                   '${teacher.teacher}',
+                   N'${teacher.teacher_name}',
+                   '${teacher.pulpit}'
+               );
+       `);
+       return teacher;
+   }
+   ```
+   - Использует SQL `MERGE` (UPSERT - обновить или вставить)
+   - Проверяет существует ли преподаватель с таким ID (`teacher`)
+     - Если существует (`MATCHED`) - обновляет данные
+     - Если не существует - создаёт новую запись
+   - `N'...'` - обозначение Unicode строк в SQL Server
+   - Возвращает переданные данные (в реальном приложении лучше возвращать данные из БД)
+
+### Пример GraphQL мутации:
+```graphql
+mutation {
+  setTeacher(teacher: {
+    teacher: "T001",
+    teacher_name: "Иванов Иван Иванович",
+    pulpit: "CS"
+  }) {
+    teacher
+    teacher_name
+    pulpit
+  }
+}
+```
+
+## 3. Пример мутации удаления: `delSubject`
+
+```javascript
+delSubject: {
+    type: GraphQLBoolean,
+    args: { subject: { type: GraphQLString } },
+    async resolve(_, { subject }) {
+        const pool = await connect();
+        const result = await pool.request().query(
+            `DELETE FROM subject WHERE subject = '${subject}'`
+        );
+        return result.rowsAffected[0] > 0;
+    },
+}
+```
+
+### Разбор:
+1. **type**: `GraphQLBoolean`
+   - Возвращает true/false в зависимости от успеха операции
+
+2. **args**: `{ subject: { type: GraphQLString } }`
+   - Принимает ID предмета для удаления
+
+3. **resolve**:
+   ```javascript
+   async resolve(_, { subject }) {
+       const pool = await connect();
+       const result = await pool.request().query(
+           `DELETE FROM subject WHERE subject = '${subject}'`
+       );
+       return result.rowsAffected[0] > 0;
+   }
+   ```
+   - Выполняет SQL DELETE запрос
+   - `rowsAffected[0] > 0` проверяет, была ли удалена хотя бы одна строка
+     - true - если предмет существовал и был удалён
+     - false - если предмета с таким ID не было
+
+### Пример GraphQL мутации:
+```graphql
+mutation {
+  delSubject(subject: "MATH101")
+}
+```
+
+## Критические замечания по коду
+
+1. **SQL-инъекции**:
+   Все примеры уязвимы к SQL-инъекциям из-за прямой подстановки значений в запрос. Безопасная версия:
+
+   ```javascript
+   // Для запроса
+   const result = await pool.request()
+       .input('teacher', sql.VarChar, teacher)
+       .query('SELECT * FROM teacher WHERE teacher = @teacher');
+
+   // Для мутации
+   await pool.request()
+       .input('teacher', sql.VarChar, teacher.teacher)
+       .input('teacher_name', sql.NVarChar, teacher.teacher_name)
+       .input('pulpit', sql.VarChar, teacher.pulpit)
+       .query(`MERGE teacher...`); // А лучше использовать хранимые процедуры
+   ```
+
+2. **Нет транзакций**:
+   Для сложных операций следует использовать транзакции.
+
+3. **Отсутствие обработки ошибок**:
+   Нет корректной обработки и возврата ошибок клиенту.
+
