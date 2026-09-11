@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User List</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        a { text-decoration: none; color: blue; }
+        .button { display: inline-block; padding: 8px 16px; margin: 10px 0; background-color: #4CAF50; color: white; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+<h1>User List</h1>
+<a href="/create.html" class="button">Create New User</a>
+<table id="userTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<script>
+    async function loadUsers() {
+        try {
+            const response = await fetch('/api/users');
+            const users = await response.json();
+            const tbody = document.querySelector('#userTable tbody');
+            tbody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                        <td>${user.Id}</td>
+                        <td>${user.Name}</td>
+                        <td>${user.Email}</td>
+                        <td>
+                            <a href="/edit.html?id=${user.Id}">Edit</a>
+                            <button onclick="deleteUser(${user.Id})">Delete</button>
+                        </td>
+                    `;
+                tbody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
+    }
+
+    async function deleteUser(id) {
+        if (confirm('Are you sure?')) {
+            try {
+                await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                loadUsers();
+            } catch (error) {
+                console.error('Error deleting user:', error);
+            }
+        }
+    }
+
+    window.onload = loadUsers;
+</script>
+</body>
+</html>
