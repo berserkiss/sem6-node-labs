@@ -1,0 +1,28 @@
+# Dependencies (each lab has its own)
+node_modules/
+
+# Build/compiled output
+dist/
+build/
+cmake-build-debug/
+
+# Environment files - may contain real credentials
+.env
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Lecture/assignment handouts - not code
+*.docx
+
+# OS/logs
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
