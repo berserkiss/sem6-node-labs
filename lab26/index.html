@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WASM Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { margin-bottom: 20px; }
+        input { width: 60px; margin: 0 10px; }
+        button { margin-right: 10px; padding: 5px 15px; }
+        .result { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>WASM Functions Demo</h1>
+
+<div class="container">
+    <input type="number" id="num1" value="5">
+    <input type="number" id="num2" value="3">
+</div>
+
+<div class="container">
+    <button onclick="executeWasm('sum')">Sum</button>
+    <button onclick="executeWasm('sub')">Subtract</button>
+    <button onclick="executeWasm('mul')">Multiply</button>
+</div>
+
+<div class="result" id="result"></div>
+
+<script>
+    let wasmInstance;
+
+    async function loadWasm() {
+        try {
+            const response = await fetch('math.wasm');
+            const bytes = await response.arrayBuffer();
+            const module = await WebAssembly.compile(bytes);
+            wasmInstance = await WebAssembly.instantiate(module);
+            console.log('WASM module loaded successfully');
+        } catch (error) {
+            console.error('Error loading WASM:', error);
+        }
+    }
+
+    function executeWasm(operation) {
+        if (!wasmInstance) {
+            document.getElementById('result').textContent = 'WASM module not loaded yet';
+            return;
+        }
+
+        const a = parseInt(document.getElementById('num1').value);
+        const b = parseInt(document.getElementById('num2').value);
+
+        let result;
+        switch(operation) {
+            case 'sum': result = wasmInstance.exports.sum(a, b); break;
+            case 'sub': result = wasmInstance.exports.sub(a, b); break;
+            case 'mul': result = wasmInstance.exports.mul(a, b); break;
+            default: result = 'Unknown operation';
+        }
+
+        document.getElementById('result').textContent =
+            `Result: ${a} ${getOperator(operation)} ${b} = ${result}`;
+    }
+
+    function getOperator(op) {
+        return {sum: '+', sub: '-', mul: '*'}[op];
+    }
+
+    // Загружаем WASM при старте
+    loadWasm();
+</script>
+</body>
+</html>
