@@ -17,15 +17,15 @@ JWT), and WebAssembly.
 | `l18/` | Sequelize ORM |
 | `l19/` | SQL Server-backed users REST API (controllers/models/routes) |
 | `l21/` | Basic auth demo |
-| `l22/` | mTLS — self-signed CA and client certificates |
+| `l22/` | mTLS with a self-signed CA and client certificates |
 | `lab21/` | Basic and Digest HTTP authentication (a second pass at l21's topic) |
 | `lab24/` | File upload exercise |
 | `lab26/` | WebAssembly (C compiled to wasm) |
 | `lab27/` | Chat bot |
 | `lab28/` | REST API with Swagger/OpenAPI docs |
 
-Each folder is an independent Node (or, for `L12_C++`, CMake) project with its own
-`package.json`/dependencies.
+Each folder is an independent Node project (or, for `L12_C++`, a CMake one) with
+its own `package.json`/dependencies.
 
 ## Setup
 
@@ -38,8 +38,8 @@ npm install
 
 ## Not tracked in this repo
 
-- `node_modules/` — run `npm install` in the lab you want
-- `.env` files — some labs read DB/JWT config from a local `.env`; create your own
-  next to the script
+- `node_modules/`: run `npm install` in whichever lab you want
+- `.env` files: a few labs read DB/JWT config from a local `.env`, so create
+  your own next to the script
 - Build output (`dist/`, `build/`, `cmake-build-debug/`)
-- Lecture/assignment handouts (`.docx`) — coursework material, not code
+- Lecture/assignment handouts (`.docx`), since they're coursework material, not code
