@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulpits Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 8px 12px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Pulpits Management System</h1>
+
+    <!-- Section for GET all pulpits -->
+    <div class="section">
+        <h2>Get All Pulpits</h2>
+        <button id="getPulpitsBtn">Get Pulpits</button>
+        <div id="pulpitsList"></div>
+        <div id="getError" class="error"></div>
+    </div>
+
+    <!-- Section for POST new pulpit -->
+    <div class="section">
+        <h2>Create New Pulpit</h2>
+        <input type="text" id="pulpitId" placeholder="Pulpit ID" required>
+        <input type="text" id="pulpitName" placeholder="Pulpit Name" required>
+        <input type="text" id="facultyId" placeholder="Faculty ID" required>
+        <button id="createPulpitBtn">Create Pulpit</button>
+        <div id="postResult"></div>
+        <div id="postError" class="error"></div>
+    </div>
+
+    <!-- Section for PUT update pulpit -->
+    <div class="section">
+        <h2>Update Pulpit</h2>
+        <input type="text" id="updatePulpitId" placeholder="Pulpit ID to update" required>
+        <input type="text" id="newPulpitName" placeholder="New Pulpit Name" required>
+        <input type="text" id="newFacultyId" placeholder="New Faculty ID" required>
+        <button id="updatePulpitBtn">Update Pulpit</button>
+        <div id="putResult"></div>
+        <div id="putError" class="error"></div>
+    </div>
+
+    <!-- Section for DELETE pulpit -->
+    <div class="section">
+        <h2>Delete Pulpit</h2>
+        <input type="text" id="deletePulpitId" placeholder="Pulpit ID to delete" required>
+        <button id="deletePulpitBtn">Delete Pulpit</button>
+        <div id="deleteResult"></div>
+        <div id="deleteError" class="error"></div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const getPulpitsBtn = document.getElementById('getPulpitsBtn');
+        const createPulpitBtn = document.getElementById('createPulpitBtn');
+        const updatePulpitBtn = document.getElementById('updatePulpitBtn');
+        const deletePulpitBtn = document.getElementById('deletePulpitBtn');
+
+        const pulpitsList = document.getElementById('pulpitsList');
+        const postResult = document.getElementById('postResult');
+        const putResult = document.getElementById('putResult');
+        const deleteResult = document.getElementById('deleteResult');
+
+        const getError = document.getElementById('getError');
+        const postError = document.getElementById('postError');
+        const putError = document.getElementById('putError');
+        const deleteError = document.getElementById('deleteError');
+
+        // GET all pulpits
+        getPulpitsBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/pulpits');
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch pulpits');
+                }
+
+                const data = await response.json();
+                displayPulpits(data);
+                getError.textContent = '';
+            } catch (error) {
+                getError.textContent = `Error: ${error.message}`;
+                pulpitsList.innerHTML = '';
+            }
+        });
+
+        // POST new pulpit
+        createPulpitBtn.addEventListener('click', async function() {
+            const pulpitId = document.getElementById('pulpitId').value;
+            const pulpitName = document.getElementById('pulpitName').value;
+            const facultyId = document.getElementById('facultyId').value;
+
+            if (!pulpitId || !pulpitName || !facultyId) {
+                postError.textContent = 'All fields are required';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/pulpits', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pulpit: pulpitId,
+                        pulpit_name: pulpitName,
+                        faculty: facultyId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create pulpit');
+                }
+
+                const data = await response.json();
+                postResult.innerHTML = `
+                        <p class="success">Pulpit created successfully!</p>
+                        <p>ID: ${data.pulpit}</p>
+                        <p>Name: ${data.pulpit_name}</p>
+                        <p>Faculty: ${data.faculty}</p>
+                    `;
+                postError.textContent = '';
+
+                // Clear input fields
+                document.getElementById('pulpitId').value = '';
+                document.getElementById('pulpitName').value = '';
+                document.getElementById('facultyId').value = '';
+            } catch (error) {
+                postError.textContent = `Error: ${error.message}`;
+                postResult.innerHTML = '';
+            }
+        });
+
+        // PUT update pulpit
+        updatePulpitBtn.addEventListener('click', async function() {
+            const pulpitId = document.getElementById('updatePulpitId').value;
+            const newPulpitName = document.getElementById('newPulpitName').value;
+            const newFacultyId = document.getElementById('newFacultyId').value;
+
+            if (!pulpitId || !newPulpitName || !newFacultyId) {
+                putError.textContent = 'All fields are required';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/pulpits', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pulpit: pulpitId,
+                        pulpit_name: newPulpitName,
+                        faculty: newFacultyId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update pulpit');
+                }
+
+                const data = await response.json();
+                putResult.innerHTML = `
+                        <p class="success">Pulpit updated successfully!</p>
+                        <p>ID: ${data.pulpit}</p>
+                        <p>New Name: ${data.pulpit_name}</p>
+                        <p>New Faculty: ${data.faculty}</p>
+                    `;
+                putError.textContent = '';
+
+                // Clear input fields
+                document.getElementById('updatePulpitId').value = '';
+                document.getElementById('newPulpitName').value = '';
+                document.getElementById('newFacultyId').value = '';
+            } catch (error) {
+                putError.textContent = `Error: ${error.message}`;
+                putResult.innerHTML = '';
+            }
+        });
+
+        // DELETE pulpit
+        deletePulpitBtn.addEventListener('click', async function() {
+            const pulpitId = document.getElementById('deletePulpitId').value;
+
+            if (!pulpitId) {
+                deleteError.textContent = 'Pulpit ID is required';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/pulpits/${pulpitId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to delete pulpit');
+                }
+
+                const data = await response.json();
+                deleteResult.innerHTML = `
+                        <p class="success">Pulpit deleted successfully!</p>
+                        <p>Deleted pulpit:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                deleteError.textContent = '';
+
+                // Clear input field
+                document.getElementById('deletePulpitId').value = '';
+            } catch (error) {
+                deleteError.textContent = `Error: ${error.message}`;
+                deleteResult.innerHTML = '';
+            }
+        });
+
+        // Display pulpits in a table
+        function displayPulpits(pulpits) {
+            if (pulpits.length === 0) {
+                pulpitsList.innerHTML = '<p>No pulpits found</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Pulpit ID</th><th>Pulpit Name</th><th>Faculty ID</th></tr></thead><tbody>';
+
+            pulpits.forEach(pulpit => {
+                html += `
+                        <tr>
+                            <td>${pulpit.pulpit}</td>
+                            <td>${pulpit.pulpit_name}</td>
+                            <td>${pulpit.faculty}</td>
+                        </tr>
+                    `;
+            });
+
+            html += '</tbody></table>';
+            pulpitsList.innerHTML = html;
+        }
+    });
+</script>
+</body>
+</html>

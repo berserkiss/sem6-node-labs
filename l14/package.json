@@ -1,0 +1,20 @@
+{
+  "name": "l14",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node 14-01.js",
+    "dev": "nodemon 14-01.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@azure/msal-node": "^3.4.0",
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
