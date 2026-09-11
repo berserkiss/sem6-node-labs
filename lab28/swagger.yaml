@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Phone Directory API
+  description: API for managing phone directory entries
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /TS:
+    get:
+      summary: Get all phone directory entries
+      description: Returns the complete phone directory
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhoneEntry'
+    post:
+      summary: Add a new phone entry
+      description: Adds a new entry to the phone directory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneEntry'
+      responses:
+        '201':
+          description: Entry created successfully
+    put:
+      summary: Update a phone entry
+      description: Updates an existing phone directory entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneEntry'
+      responses:
+        '200':
+          description: Entry updated successfully
+    delete:
+      summary: Delete a phone entry
+      description: Deletes a phone directory entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: ID of the entry to delete
+      responses:
+        '200':
+          description: Entry deleted successfully
+components:
+  schemas:
+    PhoneEntry:
+      type: object
+      required:
+        - id
+        - name
+        - phone
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the entry
+        name:
+          type: string
+          description: Name of the person
+        phone:
+          type: string
+          description: Phone number
